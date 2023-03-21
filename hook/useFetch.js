@@ -3,11 +3,18 @@ import axios from "axios";
 
 import { RAPID_API_KEY } from '@env'
 
+function rejectDelay(reason, t=2000){
+    return new Promise(function(resolve, reject){
+        setTimeout(reject.bind(null, reason), t);
+    });
+  }
 
 const useFetch = (endpoint, query) => {
     const [data, setData] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isError, setIsError] = useState(false);
+    const max_retries = 3;
+
 
     const options = {
         method: 'GET',
@@ -21,21 +28,43 @@ const useFetch = (endpoint, query) => {
     };
 
     const fetchData = async () => {
-        setIsLoading(true);
         try {
+            console.log('API Called')
             const response = await axios.request(options);
             setData(response.data.data);
             setIsLoading(false);
-        } catch (error) {
-            setIsError(error)
-            alert(`There is an error. ${error.message}`);
         } finally {
-            setIsLoading(false);
+            {}
         }
     }
 
+    
+
     useEffect(() => {
-        fetchData();
+        function sleep(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+          }
+
+        async function fetchDataAsync(retries){
+            setIsLoading(true);
+            try {
+                await fetchData();
+                return {success: true, message: "Data fetched successfully"}
+            } catch (error) {
+                if (retries > 0) {
+                    await sleep(1500);
+                    return fetchDataAsync(retries - 1);
+                } else {
+                    setIsError(error)
+                    console.log(error.message)
+                    return {success: false, message: error.message}
+                }
+            } finally {
+                setIsLoading(false);
+            }
+        }
+        fetchDataAsync(max_retries)
+        //fetchData();
     }, []);
 
     const refetchData = () => {

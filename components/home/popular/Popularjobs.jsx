@@ -18,7 +18,6 @@ const Popularjobs = () => {
     router.push(`/job-details/${item.job_id}`);
     setSelectedJob(item.job_id);
   };
-  console.log(data)
 
   return (
     <View style={styles.stylescontainer}>
